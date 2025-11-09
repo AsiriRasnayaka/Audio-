@@ -168,3 +168,101 @@ export const logout = (req, res) => {
 
 //upgrade to seller controller
 
+export const upgradeCreator = async (req, res) => {
+    try {
+        const {userID} = req.user;
+
+        //find user
+        const user = await User.findById(userID);
+        if(!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
+        }
+
+        //check if already a seller
+        if(user.role === "creator") {
+            return res.status(400).json({
+                success: false,
+                message: "User is already a creator",
+            });
+        }
+
+        //update role to sellor
+        user.role = "creator";
+        await user.save();
+
+        //Generate new jwt with updated role
+        const token = jwt.sign(
+            {userID: user._id, role: user.role},
+            process.env.JWT_SECRET,
+            {
+                expiresIn: "7d",
+            }
+        );
+
+        //set new cookie
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "User upgrade to create successfully",
+
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                profileImage: user.profileImage,
+                gender: user.gender,
+            },
+        });
+    } catch (error) {
+        console.error("Upgrade sellor error:", error.message);
+        res.status(500).json({
+            success: false,
+            message: "Server error during rolr upgrade",
+        });
+    }
+};
+
+//get Authenticated user Controller
+export const getAuthUser = async (req, res) => {
+    try{
+        const {userID} = req.user;
+
+        //find user and populate relevent fields
+        const user = await User.findById(userID).select("-password");
+
+        if(!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
+        }
+        res.status(200).json({
+            success:true,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                gender: user.gender,
+                profileImage: user.profileImage,
+            },
+        });
+    } catch(error) {
+        console.error("Get auth user error:", error.message);
+        res.status(500).json({
+            success: false,
+            message: "Server error while fetching user data",
+        });
+    }
+};
+
+
