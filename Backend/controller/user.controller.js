@@ -3,7 +3,8 @@ import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
 import Song from "../models/song.model.js";
 import Playlist from "../models/playlist.model.js";
-
+import uploadToCloudinary from "../helper/uploadToCloudinary.js";
+import deleteFromCloudinary from "../helper/deleteFromCloudinary.js";
 
 
 export const signup = async (req, res) => {
@@ -265,4 +266,172 @@ export const getAuthUser = async (req, res) => {
     }
 };
 
+export const updateUser = async (req, res) => {
+  try {
+    const { userId } = req.user;
+    const { id } = req.params;
+    const { name, email, password, gender } = req.body;
+    const { profileImage } = req.files || {};
 
+    // Only allow logged-in user to update their own account
+    if (id !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized. You can only update your own account.",
+      });
+    }
+
+    // Find user
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    const updatedData = {};
+
+    // Email update with uniqueness check
+    if (email && email !== user.email) {
+      const existingEmail = await User.findOne({ email });
+      if (existingEmail) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Email already registered." });
+      }
+      if (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Please enter a valid email." });
+      }
+      updatedData.email = email.trim();
+    }
+
+    if (name) updatedData.name = name.trim();
+    if (gender) updatedData.gender = gender.trim();
+
+    // Password update with hashing
+    if (password) {
+      if (password.length < 6) {
+        return res.status(400).json({
+          success: false,
+          message: "Password must be at least 6 characters.",
+        });
+      }
+      const salt = await bcrypt.genSalt(10);
+      updatedData.password = await bcrypt.hash(password, salt);
+    }
+
+    // Profile image update
+    if (profileImage) {
+      if (user.profileImage) {
+        await deleteFromCloudinary(user.profileImage, "image");
+      }
+      const result = await uploadToCloudinary(profileImage[0].path, {
+        folder: "profile_images",
+      });
+      updatedData.profileImage = result.secure_url;
+    }
+
+    // No fields to update .if the user didn’t send any valid fields, updatedData is {} → empty object → no point in running findByIdAndUpdate
+    if (Object.keys(updatedData).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No valid fields provided to update.",
+      });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      { $set: updatedData },
+      { new: true, runValidators: true }
+    ).select("-password");
+
+    res.status(200).json({
+      success: true,
+      message: "User updated successfully",
+      user: {
+        id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        profileImage: updatedUser.profileImage,
+        gender: updatedUser.gender,
+      },
+    });
+  } catch (error) {
+    console.error("Update user error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error updating user",
+      error: error.message,
+    });
+  }
+};
+
+export const deleteUser = async (req, res) => {
+    try {
+    const { userId } = req.user; // from auth JWT
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    // 1 Delete profile image if exists
+    if (user.profileImage) {
+      await deleteFromCloudinary(user.profileImage, "image");
+    }
+
+    // 2 If user is creator, delete all uploaded songs and playlists
+    if (user.role === "creator") {
+      // Find all songs uploaded by creator
+      const songs = await Song.find({ uploadedBy: userId });
+
+      // Delete all song files and cover images from Cloudinary
+      const deletions = [];
+      for (const song of songs) {
+        if (song.fileUrl)
+          deletions.push(deleteFromCloudinary(song.fileUrl, "video"));
+        if (song.coverImage)
+          deletions.push(deleteFromCloudinary(song.coverImage, "image"));
+      }
+
+      await Promise.allSettled(deletions);
+
+      // Delete songs from DB
+      await Song.deleteMany({ uploadedBy: userId });
+
+      // Delete playlists created by this creator
+      await Playlist.deleteMany({ user: userId });
+    } else {
+      //  Optional: If normal user, you may want to remove them from playlists they added songs to
+      await Playlist.updateMany({}, { $pull: { songs: { $in: user.playlists } } });
+    }
+
+    // 3 Delete the user
+    await User.findByIdAndDelete(userId);
+
+    // 4 Clear JWT cookie
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "User account and associated resources deleted successfully.",
+    });
+  } catch (error) {
+    console.error("Delete user error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Error deleting user account",
+      error: error.message,
+    });
+  }
+};
