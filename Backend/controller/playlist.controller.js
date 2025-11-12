@@ -1,5 +1,5 @@
-import Playlist from "../models/playlist.model";
-import Song from "../models/song.model";
+import Playlist from "../models/playlist.model.js";
+import Song from "../models/song.model.js";
 
 export const createPlaylist = async (req, res) => {
   try {

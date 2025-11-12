@@ -1,6 +1,6 @@
 import express from "express";
 import multer from "multer";
-import storage from "../config/multerStorage";
+import storage from "../config/multerStorage.js";
 import {
     createSong,
     getSongs,
@@ -11,7 +11,7 @@ import {
     deleteSong,
     getSongById
 } from "../controller/song.controller.js";
-import { isLoggedIn } from "../middleware/isLoggedIn";
+import { isLoggedIn } from "../middleware/isLoggedIn.js";
 
 const upload = multer({ storage });
 
