@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import cloudinary from "../config/cloudinary.js";
 
-const uploadToCloudinary = async (fileURLToPath, options = {}) => {
+const uploadToCloudinary = async (filePath, options = {}) => {
     try{
         //Get file Extension
         const ext = path.extname(filePath).toLowerCase();

@@ -25,7 +25,7 @@ function SideNavbar({ isSidebarOpen }) {
       >
         <div className="p-4 flex flex-col h-full">
           <nav className="mt-4 flex-1 flex flex-col space-y-2">
-            {navItems().map((item) => (
+            {navItem().map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
@@ -60,7 +60,7 @@ function SideNavbar({ isSidebarOpen }) {
       {/* Bottom Navbar for Mobile */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#111827] text-gray-100 z-50 shadow-lg border-t border-gray-700">
         <nav className="flex justify-around items-center p-2">
-          {navItems().map((item) => (
+          {navItem().map((item) => (
             <NavLink
               key={item.to}
               to={item.to}

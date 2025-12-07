@@ -5,7 +5,7 @@ import {logoutUser} from "../store/slices/userSlice.js";
 import { FaSearch, FaUserCircle, FaSignOutAlt, FaBars } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 
-function Header({ toggleSidebae}) {
+function Header({ toggleSidebar}) {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const {currentUser} = useSelector((state) => state.user);
