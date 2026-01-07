@@ -18,10 +18,16 @@ const uploadToCloudinary = async (filePath, options = {}) => {
         const result = await cloudinary.uploader.upload(filePath, options);
         return result;
     } catch (error) {
-        console.error("Error uploding file to cloudinary:", error);
+        console.error("Error uploading file to Cloudinary:", error);
         throw error;
     } finally {
-        fs.unlinkSync(filePath);
+        try {
+            if (filePath && fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+        } catch (e) {
+            console.warn(`Failed to remove temp file ${filePath}:`, e.message);
+        }
     }
 };
 
