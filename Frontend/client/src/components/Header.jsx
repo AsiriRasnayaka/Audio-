@@ -69,7 +69,7 @@ function Header({ toggleSidebar}) {
             className="flex items-center"
           >
             <h1 className="text-3xl font-bold text-blue-400 drop-shadow-[0_0_10px_#3B82F6]">
-              Audora
+              Audio +
             </h1>
           </motion.div>
         </div>
