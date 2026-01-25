@@ -37,7 +37,7 @@ export const createSong = async (req, res) => {
       duration,
       fileUrl: audioResult.secure_url,
       coverImage: imageResult.secure_url,
-      uploadedBy: req.user.userId,
+      uploadedBy: req.user.userID,
     });
 
     await newSong.save();
@@ -110,7 +110,7 @@ export const getSongById = async (req, res) => {
 export const playSong = async (req, res) => {
   try {
     const songId = req.params.id;
-    const { userId } = req.user;
+    const { userID: userId } = req.user;
 
     // Find song
     const song = await Song.findById(songId);
@@ -145,7 +145,7 @@ export const playSong = async (req, res) => {
 
 export const getRecentSongs = async (req, res) => {
   try {
-    const { userId } = req.user;
+    const { userID: userId } = req.user;
 
     // Fetch last 50 plays, sorted by newest first
     const recentPlays = await PlayHistory.find({ user: userId })
@@ -190,7 +190,7 @@ export const getRecentSongs = async (req, res) => {
 
 export const getCreatorSongs = async (req, res) => {
   try {
-    const creatorId = req.user.userId;
+    const creatorId = req.user.userID;
 
     const songs = await Song.find({ uploadedBy: creatorId })
       .populate("uploadedBy", "name email role")
@@ -210,7 +210,7 @@ export const getCreatorSongs = async (req, res) => {
 export const updateSong = async (req, res) => {
   try {
     const { id } = req.params;
-    const { userId } = req.user;
+    const { userID: userId } = req.user;
     const { title, artist, album,  category} = req.body;
 
     const song = await Song.findById(id);
@@ -269,7 +269,7 @@ export const updateSong = async (req, res) => {
 export const deleteSong = async (req, res) => {
   try {
     const { id } = req.params;
-    const { userId } = req.user;
+    const { userID: userId } = req.user;
 
     const song = await Song.findById(id);
 

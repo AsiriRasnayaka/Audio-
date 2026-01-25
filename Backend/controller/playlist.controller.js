@@ -16,7 +16,7 @@ export const createPlaylist = async (req, res) => {
     const newPlaylist = new Playlist({
       name,
       description,
-      user: req.user.userId,
+      user: req.user.userID,
     });
 
     await newPlaylist.save();
@@ -59,7 +59,7 @@ export const getPlaylistById = async (req, res) => {
 
 export const getUserPlaylists = async (req, res) => {
   try {
-    const { userId } = req.user;
+    const { userID: userId } = req.user;
 
     const playlists = await Playlist.find({ user: userId })
       .populate("songs", "title artist duration") // only return selected fields from Song
@@ -78,7 +78,7 @@ export const getUserPlaylists = async (req, res) => {
 export const updatePlaylist = async (req, res) => {
   try {
     const { id } = req.params;
-    const { userId } = req.user;
+    const { userID: userId } = req.user;
     const { name, description } = req.body;
 
     const playlist = await Playlist.findById(id);
@@ -112,7 +112,7 @@ export const updatePlaylist = async (req, res) => {
 export const deletePlaylist = async (req, res) => {
   try {
     const { id } = req.params;
-    const { userId } = req.user;
+    const { userID: userId } = req.user;
 
     const playlist = await Playlist.findById(id);
 
@@ -142,7 +142,7 @@ export const addSongToPlaylist = async (req, res) => {
   try {
     const { songId } = req.body;
     const { id } = req.params;
-    const { userId } = req.user;
+    const { userID: userId } = req.user;
 
     const playlist = await Playlist.findById(id);
     if (!playlist) {
@@ -185,7 +185,7 @@ export const removeSongFromPlaylist = async (req, res) => {
   try {
     const { songId } = req.body;
     const { id } = req.params;
-    const { userId } = req.user;
+    const { userID: userId } = req.user;
     
     const playlist = await Playlist.findById(id);
     if (!playlist) {
